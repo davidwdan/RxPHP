@@ -73,4 +73,22 @@ final class EventLoopScheduler extends VirtualTimeScheduler
         }
         return time() * 1000;
     }
+
+    public function schedule(callable $action, $delay = 0)
+    {
+        if (!$this->insideInvoke) {
+            $this->clock = $this->now();
+        }
+
+        return parent::schedule($action, $delay);
+    }
+
+    public function scheduleRelativeWithState($state, $dueTime, $action)
+    {
+        if (!$this->insideInvoke) {
+            $this->clock = $this->now();
+        }
+
+        return parent::scheduleRelativeWithState($state, $dueTime, $action);
+    }
 }

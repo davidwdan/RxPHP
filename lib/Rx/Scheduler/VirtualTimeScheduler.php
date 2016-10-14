@@ -32,7 +32,7 @@ class VirtualTimeScheduler implements SchedulerInterface
             return new EmptyDisposable();
         };
 
-        return $this->scheduleAbsoluteWithState($action, $this->now() + $delay, $invokeAction);
+        return $this->scheduleAbsoluteWithState($action, $this->clock + $delay, $invokeAction);
     }
 
     public function scheduleRecursive(callable $action)
@@ -93,7 +93,7 @@ class VirtualTimeScheduler implements SchedulerInterface
 
     public function scheduleRelativeWithState($state, $dueTime, $action)
     {
-        $runAt = $this->now() + $dueTime;
+        $runAt = $this->clock + $dueTime;
 
         return $this->scheduleAbsoluteWithState($state, $runAt, $action);
     }
