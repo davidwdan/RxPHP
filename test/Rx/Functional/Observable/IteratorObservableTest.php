@@ -2,9 +2,9 @@
 
 namespace Rx\Functional\Observable;
 
-
 use Rx\Functional\FunctionalTestCase;
 use Rx\Observable;
+use Rx\Observable\IteratorObservable;
 
 class IteratorObservableTest extends FunctionalTestCase
 {
@@ -15,7 +15,7 @@ class IteratorObservableTest extends FunctionalTestCase
     {
         $generator = $this->genOneToThree();
 
-        $xs = new \Rx\Observable\IteratorObservable($generator);
+        $xs = new IteratorObservable($generator);
 
         $results = $this->scheduler->startWithCreate(function () use ($xs) {
             return $xs;
@@ -36,7 +36,7 @@ class IteratorObservableTest extends FunctionalTestCase
     {
         $generator = $this->genNull();
 
-        $xs = new \Rx\Observable\IteratorObservable($generator);
+        $xs = new IteratorObservable($generator);
 
         $results = $this->scheduler->startWithCreate(function () use ($xs) {
             return $xs;
@@ -55,7 +55,7 @@ class IteratorObservableTest extends FunctionalTestCase
     {
         $generator = $this->genOne();
 
-        $xs = new \Rx\Observable\IteratorObservable($generator);
+        $xs = new IteratorObservable($generator);
 
         $results = $this->scheduler->startWithCreate(function () use ($xs) {
             return $xs;
@@ -75,7 +75,7 @@ class IteratorObservableTest extends FunctionalTestCase
         $error     = new \Exception();
         $generator = $this->genError($error);
 
-        $xs = new \Rx\Observable\IteratorObservable($generator);
+        $xs = new IteratorObservable($generator);
 
         $results = $this->scheduler->startWithCreate(function () use ($xs) {
             return $xs;
@@ -93,7 +93,7 @@ class IteratorObservableTest extends FunctionalTestCase
     {
         $generator = $this->genOneToThree();
 
-        $xs = new \Rx\Observable\IteratorObservable($generator);
+        $xs = new IteratorObservable($generator);
 
         $results = $this->scheduler->startWithDispose(function () use ($xs) {
             return $xs;
@@ -115,7 +115,7 @@ class IteratorObservableTest extends FunctionalTestCase
         if (defined('HHVM_VERSION') && version_compare(HHVM_VERSION, '3.11.0', 'lt')) {
             $this->markTestSkipped();
         }
-        
+
         $spl = new \SplObjectStorage();
 
         $a = (object)["prop" => 1];
@@ -128,7 +128,7 @@ class IteratorObservableTest extends FunctionalTestCase
 
         $spl->rewind();
 
-        $xs = new \Rx\Observable\IteratorObservable($spl);
+        $xs = new IteratorObservable($spl);
 
         $results = $this->scheduler->startWithCreate(function () use ($xs) {
             return $xs;
@@ -139,6 +139,50 @@ class IteratorObservableTest extends FunctionalTestCase
             onNext(202, $b),
             onNext(203, $c),
             onCompleted(204)
+        ], $results->getMessages());
+    }
+
+    /**
+     * @test
+     */
+    public function it_schedules_all_elements_from_the_generator_with_return()
+    {
+        $generator = $this->genOneToThreeAndReturn();
+
+        $xs = new IteratorObservable($generator);
+
+        $results = $this->scheduler->startWithCreate(function () use ($xs) {
+            return $xs;
+        });
+
+        $this->assertMessages([
+            onNext(201, 1),
+            onNext(202, 2),
+            onNext(203, 3),
+            onNext(204, 10),
+            onCompleted(204),
+        ], $results->getMessages());
+    }
+
+    /**
+     * @test
+     */
+    public function it_schedules_all_elements_from_the_splfileobject()
+    {
+        $file = new \SplFileObject(__DIR__ . '/spl_file_test.txt');
+
+        $xs = Observable::fromIterator($file);
+
+        $results = $this->scheduler->startWithCreate(function () use ($xs) {
+            return $xs;
+        });
+
+        $this->assertMessages([
+            onNext(201, "1\n"),
+            onNext(202, "2\n"),
+            onNext(203, "3\n"),
+            onNext(204, "4"),
+            onCompleted(205),
         ], $results->getMessages());
     }
 
@@ -163,5 +207,14 @@ class IteratorObservableTest extends FunctionalTestCase
     {
         throw $e;
         yield;
+    }
+
+    private function genOneToThreeAndReturn()
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            yield $i;
+        }
+
+        return 10;
     }
 }

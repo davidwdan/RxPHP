@@ -25,10 +25,15 @@ class IteratorObservable extends Observable
     public function subscribe(ObserverInterface $observer, SchedulerInterface $scheduler = null)
     {
         $scheduler = $scheduler ?: new ImmediateScheduler();
-        
+
         $defaultFn = function ($reschedule) use (&$observer) {
             try {
                 if (!$this->items->valid()) {
+
+                    if ($this->items instanceof \Generator && $this->items->getReturn()) {
+                        $observer->onNext($this->items->getReturn());
+                    }
+
                     $observer->onCompleted();
                     return;
                 }
@@ -44,13 +49,18 @@ class IteratorObservable extends Observable
                 $observer->onError($e);
             }
         };
-        
+
         $hhvmFn = function ($reschedule) use (&$observer) {
             try {
                 //HHVM requires you to call next() before current()
                 $this->items->next();
 
                 if (!$this->items->valid()) {
+
+                    if ($this->items instanceof \Generator && $this->items->getReturn()) {
+                        $observer->onNext($this->items->getReturn());
+                    }
+
                     $observer->onCompleted();
                     return;
                 }
